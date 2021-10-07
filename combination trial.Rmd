@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(astsa)
+library("RColorBrewer")
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+set.seed(20174558)
+Brownian<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
+{
+  paths<-1
+  n <- 5000
+  times <- seq(0, 1, length.out=n)
+  drift <- 0.15
+  diffusion <- 0.2
+  X<-matrix(0,nrow=(n),ncol=paths)
+	maximum <- matrix(0, nrow=1, ncol = paths)
+	means <- matrix(0, nrow=1, ncol = paths)	
+  for(i in 1:paths)
+    {
+    dW <- rnorm(n)/sqrt(n)
+    W <- cumsum(dW)
+    X[,i] <- drift*times + diffusion*cumsum(dW)
+    maximum[1,i]<-max(X[,i])
+    means[1,i] <- mean(X[n,i])
+  }
+# par(mfrow=c(1,2))
+	matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"),
+	         x = seq(0, 1, length.out = 5000))
+	abline(h=mean(maximum), col = "black",)
+	matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
+	abline(v=4000)
+	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
+
+	num = length(X)
+  A = cbind(1,1,0,0)
+  # Function to Calculate Likelihood
+  Linn =function(para){
+  Phi = diag(0,4); Phi[1,1] = para[1]
+  Phi[2,]=c(0,-1,-1,-1); Phi[3,]=c(0,1,0,0); Phi[4,]=c(0,0,1,0)
+  cQ1 = para[2]; cQ2 = para[3] # sqrt q11 and q22
+  cQ = diag(0,4); cQ[1,1]=cQ1; cQ[2,2]=cQ2
+  cR = para[4] # sqrt r11
+  kf = Kfilter0(num, X, A, mu0, Sigma0, Phi, cQ, cR)
+  return(kf$like) }
+	
+	# Initial Parameters
+  mu0 = c(.7,0,0,0); Sigma0 = diag(.6,4)
+  init.par = c(1.03,.1,.1,.5) # Phi[1,1], the 2 cQs and cR
+  # Estimation and Results
+  est = optim(init.par, Linn,NULL, method='BFGS', hessian=TRUE,
+  control=list(trace=1,REPORT=1))
+  SE = sqrt(diag(solve(est$hessian)))
+  u = cbind(estimate=est$par, SE)
+  rownames(u)=c('Phi11','sigw1','sigw2','sigv'); u
+  
+
+  # Smooth
+  Phi = diag(0,4); Phi[1,1] = est$par[1]
+  Phi[2,]=c(0,-1,-1,-1); Phi[3,]=c(0,1,0,0); Phi[4,]=c(0,0,1,0)
+  cQ1 = est$par[2]; cQ2 = est$par[3]
+  cQ = diag(1,4); cQ[1,1]=cQ1; cQ[2,2]=cQ2
+  cR = est$par[4]
+  ks = Ksmooth0(num,X,A,mu0,Sigma0,Phi,cQ,cR)
+
+  # Plots
+  Tsm = ts(ks$xs[1,,], start=0, freq=4) 
+  Ssm = ts(ks$xs[2,,], start=0, freq=4)
+  p1 = 3*sqrt(ks$Ps[1,1,]); p2 = 3*sqrt(ks$Ps[2,2,])
+  par(mfrow=c(2,1))
+  plot(Tsm, main='Trend Component', ylab='Trend')
+  xx = c(time(X), rev(time(X)))
+  yy = c(Tsm-p1, rev(Tsm+p1))
+  polygon(xx, yy, border=NA, col=gray(.5, alpha = .3))
+  plot(X, main='Data & Trend+Season', ylab='J&J QE/Share', ylim=c(-60,130))
+  xx = c(time(X), rev(time(X)) )
+  yy = c((Tsm+Ssm)-(p1+p2), rev((Tsm+Ssm)+(p1+p2)) )
+  polygon(xx, yy, border=NA, col=gray(.5, alpha = .3))
+  
+  # Forecast
+
+  n.ahead = 100;
+  y = ts(append(X, rep(0,n.ahead)), start=0, freq=5)
+  rmspe = rep(0,n.ahead); x00 = ks$xf[,,num]; P00 = ks$Pf[,,num]
+  Q = t(cQ)%*%cQ; R = t(cR)%*%(cR)
+  for (m in 1:n.ahead){
+  xp = Phi%*%x00; Pp = Phi%*%P00%*%t(Phi)+Q
+  sig = A%*%Pp%*%t(A)+R; K = Pp%*%t(A)%*%(1/sig)
+  x00 = xp; P00 = Pp-K%*%A%*%Pp
+  y[num+m] = A%*%xp; rmspe[m] = sqrt(sig) }
+  plot(y, type='o', main='', ylab='J&J QE/Share', ylim=c(-100,300),
+  xlim=c(0,1250))
+  upp = ts(y[(num+1):(num+n.ahead)]+2*rmspe, start=1100, freq=50)
+  low = ts(y[(num+1):(num+n.ahead)]-2*rmspe, start=1100, freq=50)
+  xx = c(time(low), rev(time(upp)))
+  yy = c(low, rev(upp))
+  polygon(xx, yy, border=8, col=gray(.5, alpha = .3))
+  abline(v=1000, lty=3)
+  
+  
+  }
+
+
+Brownian()
+
+```
+
+

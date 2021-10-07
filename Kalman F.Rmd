@@ -1,0 +1,114 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(KFAS)
+```
+
+```{r}
+library(autostsm)
+library(forecast)
+```
+
+
+```{r}
+set.seed(20174558)
+KalBrownian<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
+{
+  paths<-10
+  n <- 5000
+  times <- seq(0, 1, length.out=n)
+  drift <- 0.15
+  diffusion <- 0.5
+  X<-matrix(0,nrow=(n),ncol=paths)
+	maximum <- matrix(0, nrow=1, ncol = paths)
+	means <- matrix(0, nrow=1, ncol = paths)	
+  for(i in 1:paths)
+    {
+    dW <- rnorm(n)/sqrt(n)
+    W <- cumsum(dW)
+    X[,i] <- drift*times + diffusion*cumsum(dW)
+    maximum[1,i]<-max(X[,i])
+    means[1,i] <- mean(X[n,i])
+
+    fit_ts <- StructTS(X[,i],"level")
+  	fit_ts
+    par(mfrow = c(2,1))
+  	plot(X[,i], type = "o", col = "grey")
+  	lines(fitted(fit_ts), lty = "dashed", lwd = 1)
+	
+  	lines(tsSmooth(fit_ts), lty = "dashed", lwd = 1, col = "blue")
+	
+  	plot(forecast(fit_ts, level =c(50,90), h = 1000), xlim = c(0,6000))
+  }
+# par(mfrow=c(1,2))
+	matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l",
+	        #col=brewer.pal(n = paths, name = "Spectral"),
+	         x = seq(0, 1, length.out = 5000))
+
+#	tss<- ts_ts(X)
+#	fit_ts <- StructTS(X,"level")
+#	fit_ts
+	
+#	plot(X, type = "o", col = "grey")
+#	lines(fitted(fit_ts), lty = "dashed", lwd = 1)
+#	
+#	lines(tsSmooth(fit_ts), lty = "dashed", lwd = 1, col = "blue")
+#	
+#	plot(forecast(fit_ts, level =c(50,90), h = 1000), xlim = c(0,6000))
+  }
+
+
+KalBrownian()
+```
+
+```{r}
+set.seed(20174558)
+KalBrownianBridge<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
+{
+  paths<-5
+  n <- 5000
+  times <- seq(0, 1, length.out=n)
+  drift <- 0.5
+  diffusion <- 0.2
+  XB<-matrix(0,nrow=(n),ncol=paths)
+	maximum <- matrix(0, nrow=1, ncol = paths)
+  for(i in 1:paths)
+    {
+    dW <- rnorm(n)/sqrt(n)
+    W <- cumsum(dW)
+    X <- drift*times + diffusion*cumsum(dW)
+    XB[,i] <- X - (times) * X[n] # X - (times/5000) * X[n]*(times/5000)/(1-times/5000) goes back to brownian motion
+#    dX[,i] <- drift*times + diffusion*cumsum(dW)
+    maximum[1,i]<-max(XB[,i])
+    
+    fit_tsB <- StructTS(XB[,i],"level")
+  	fit_tsB
+    par(mfrow = c(2,1))
+  	plot(XB[,i], type = "o", col = "grey")
+  	lines(fitted(fit_tsB), lty = "dashed", lwd = 1)
+	
+  	lines(tsSmooth(fit_tsB), lty = "dashed", lwd = 1, col = "blue")
+	
+  	plot(forecast(fit_tsB, level =c(50,90), h = 1000), xlim = c(0,6000))
+  	
+  }
+#	par(mfrow=c(1,2))
+	matplot(XB,main="Brownian Bridge",xlab="Time",ylab="Path",type="l",
+	#        col=brewer.pal(n = paths, name = "Spectral"), 
+	        x = seq(0, 1, length.out = 5000))
+#	abline(h=mean(maximum), col = "black",)
+#	matplot(XB,main="Brownian Bridge",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
+#	legend("bottomleft",legend=cat("drift = ", drift),cat("diffusion = ", diffusion)) 
+#	abline(v=4000)
+#	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
+#	print(maximum)
+#	print(mean(maximum))
+  }
+
+
+KalBrownianBridge()
+
+```
