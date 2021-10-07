@@ -1,0 +1,73 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+library(e1071)
+```
+
+
+```{r}
+rbridge <- function(end=1, frequency=1000) {
+
+  z <- rwiener(end=end, frequency=frequency)
+  ts(z - time(z)*as.vector(z)[frequency],
+     start=1/frequency, frequency=frequency)
+}
+```
+
+```{r}
+x <- rbridge(2,10000)
+plot(x, type = 'l')
+```
+
+
+
+```{r}
+library(astsa)
+set.seed(1); num = 50
+w=rnorm(num+1,0,1); v=rnorm(num,0,1)
+mu=cumsum(w) #state: mu[0],mu[1],...,mu[50]
+y=mu[-1]+v #obs y[1],...,y[50]
+```
+
+```{r}
+ks=Ksmooth0(num,y,A=1,mu0=0,Sigma0=1,Phi=1,cQ=1,cR=1)
+```
+
+
+```{r}
+par(mfrow  =c(3,1))
+Time = num:1
+plot(Time,mu[-1], main = 'Predict', ylim = c(-5,10))
+  lines(ks$xp)
+  lines(ks$xp+2*sqrt(ks$Pp),lty=2,col=4)
+  lines(ks$xp-2*sqrt(ks$Pp),lty=2,col=4)
+plot(Time,mu[-1], main = 'Filter', ylim = c(-5,10))
+  lines(ks$xf)
+  lines(ks$xf+2*sqrt(ks$Pf),lty=2,col=4)
+  lines(ks$xf-2*sqrt(ks$Pf),lty=2,col=4)
+plot(Time,mu[-1], main = 'Smooth', ylim = c(-5,10))
+  lines(ks$xs)
+  lines(ks$xs+2*sqrt(ks$Ps),lty=2,col=4)
+  lines(ks$xs-2*sqrt(ks$Ps),lty=2,col=4)
+```
+
+
+
+

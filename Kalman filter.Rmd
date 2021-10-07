@@ -1,0 +1,79 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+library(dlm)
+library(tidyverse)
+```
+
+```{r}
+mu_z = 0.1
+mu_y = 0.5
+rhol = 0.9
+sig_z = 1
+sig_u1 = 10
+sig_u2 = 0.1
+```
+
+```{r}
+GG = matrix(c(1+rhol,-rhol,mu_z,1,0,0,0,0,1),nrow = 3,byrow = TRUE)
+FF <- matrix(c(1,0,mu_y,0,1,0,0,0,1),nrow=3,byrow=TRUE)
+m0 <- matrix(c(0,0,0), nrow=3)
+C0 <- matrix(rep(0,9),nrow=3)
+W <- matrix(c(sig_z,0,0,
+              0,0,0,
+              0,0,0),nrow=3,byrow=TRUE)
+V <- matrix(c(sig_u1,0,0,
+              0,sig_u2,0,
+              0,0,0),nrow=3,byrow=TRUE)
+my_dlm <- dlm(FF=FF,V=V,GG=GG,W=W,V=V,m0=c(0,0,1),C0=C0)
+```
+
+
+
+```{r}
+set.seed(201810)  #set seed for reproducible results
+y1 <- dlmForecast(my_dlm, nAhead=120,sampleNew=1)
+df <- data.frame(y=y1$newObs, z=y1$newStates)
+df$id <- seq.int(nrow(df))
+ggplot(data=df, aes(x=id,y=y.1))+
+  geom_line()+
+  geom_line(linetype=2,aes(y=z.1),color="red")+
+  labs(x="time",y="Z", title="Simulated dynamic linear model", subtitle="black solid line observation y1\nred dotted line fundamental z")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

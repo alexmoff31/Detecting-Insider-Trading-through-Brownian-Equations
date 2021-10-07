@@ -1,0 +1,192 @@
+Using Monte Carlo to simulate paths for various Stochastic Processes
+
+Key Properties of Standard Brownian Motion
+W(0) = 0
+W(t) is continuous for all t
+W(t) is normally distributed
+Mean of 0 and var of σ^2(t)
+W(t) exhibits stationary and indepent incrementals
+  The difference W(t)-W(s) ~ N(0,t,s) for any 0<=s<t<=T
+Cov(W(s),W(t)) = σ^2min(s,t)
+
+![Brownian Motion](/Users/alexmoffatt/Documents/Study/Uni/2021 Sem 2/Project/Brownian_motion.jpeg)
+
+
+![Brownian Motion](/Users/alexmoffatt/Documents/Study/Uni/2021 Sem 2/Project/Brownian_motion_SDE.jpeg)
+```{r}
+library(distr6)
+library(ggplot2)
+library("RColorBrewer")
+```
+
+
+```{r}
+set.seed(20174558)
+StandardBrownian<-function() # Standard Browninan with drift 0 and diffusion 1
+{
+	paths<-20
+	count<-5000
+	interval<-5/count
+	sample<-matrix(0,nrow=(count+1),ncol=paths)
+	for(i in 1:paths)
+	{
+		sample[1,i]<-0
+		for(j in 2:(count+1))
+		{
+			sample[j,i]<-sample[j-1,i]+((interval)^.5)*rnorm(1)
+		} 
+	}	
+	cat("E[W(2)] = ",mean(sample[2001,]),"\n")
+	cat("E[W(5)] = ",mean(sample[5001,]),"\n")
+	matplot(sample,main="Standard Brownian",xlab="Time",ylab="Path",type="l")
+}
+StandardBrownian()
+```
+
+
+
+
+
+```{r}
+set.seed(20174558)
+Brownian<-function() #  Browninan with drift 0.005 and diffusion 0.25
+{
+	paths<-10
+	count<-5000
+	interval<-1/count
+	drift <- 0.15
+	diffusion <- 0.2
+	sample<-matrix(0,nrow=(count+1),ncol=paths)
+	maximum <- matrix(0, nrow=1, ncol = paths)
+	for(i in 1:paths)
+	{
+		sample[1,i]<-0
+		for(j in 2:(count+1))
+		{
+			sample[j,i]<-sample[j-1,i]+interval*drift+((interval)^.5)*rnorm(1)*diffusion
+			maximum[1,i]<-max(sample[,i])
+		}
+	
+	}	
+	cat("E[W(2)] = ",mean(sample[1,]),"\n")
+	cat("E[W(5)] = ",mean(sample[5,]),"\n")
+	par(mfrow=c(1,2))
+	matplot(sample,main="Brownian",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
+	abline(h=mean(maximum), col = "black",)
+	matplot(sample,main="Brownian",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
+	abline(v=4000)
+	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
+	print(maximum)
+	print(mean(maximum))
+}
+
+Brownian()
+```
+```{r}
+n = 1001
+times <- seq(0,1,length.out = n)
+times
+```
+
+
+
+```{r}
+set.seed(20174558)
+BrownianBridge<-function() #  Browninan with drift 0.005 and diffusion 0.25
+{
+	paths<-1
+	count<-5000
+	interval<-5/count
+	drift <- 0.005
+	diffusion <- 0.25
+	sample<-matrix(0,nrow=(count+1),ncol=paths)
+	times <- seq(0, 1, length.out=count)
+	for(i in 1:paths)
+	{
+		sample[1,i]<-0
+		for(j in 2:(count+1))
+		{
+		  normr <- rnorm(1)
+			sample[j,i]<-(sample[j-1,i]+interval*drift+((interval)^.5)*normr*diffusion) - times[j-1]*(sample[j-1,i]+interval*drift+((interval)^.5)*normr*diffusion)
+		}
+	}	
+	cat("E[W(2)] = ",mean(sample[2000,]),"\n")
+	cat("E[W(5)] = ",mean(sample[5001,]),"\n")
+	matplot(sample,main="Brownian",xlab="Time",ylab="Path",type="l")
+}
+
+BrownianBridge()
+```
+
+
+Geometirc Brownian Motion
+S(𝑡)=𝑌(0)𝑒(𝜇−𝜎22)𝑡+𝜎 
+𝑍(𝑡)
+
+S(t) = S(0)exp([mu-0.5sigma^2]*t+sigma*W(t))
+
+
+
+```{r}
+GeometricBrownian<-function()
+{
+	paths<-10
+	count<-5000
+	interval<-5/count
+	mean<-0.7
+	sigma<-0.5
+	sample<-matrix(0,nrow=(count+1),ncol=paths)
+	for(i in 1:paths)
+	{
+		sample[1,i]<-100
+		for(j in 2:(count+1))
+		{
+			sample[j,i]<-sample[j-1,i]*exp(interval*(mean-((sigma)^2)/2)+((interval)^.5)*rnorm(1)*sigma) #Expression for Geometric Brownian Motion
+		}
+	}	
+	cat("E[W(2)] = ",mean(sample[2001,]),"\n")
+	cat("E[W(5)] = ",mean(sample[5001,]),"\n")
+	matplot(sample,main="Geometric Brownian",xlab="Time",ylab="Path",type="l")
+}
+GeometricBrownian()
+```
+
+
+
+```{r}
+set.seed(20174558)
+n <- 5000
+times <- seq(0, 1, length.out=n)
+
+
+dW <- rnorm(n)/sqrt(n)
+drift <- 0.15
+diffusion <- 0.2
+W <- cumsum(dW)
+dX <- drift*times + diffusion*cumsum(dW)
+X <- cumsum(dX)
+XB <- dX - times * dX[n]
+par(mfrow=c(1,2))
+plot(times,dX,type="l",main = "Brownian Motion") # original BM
+plot(times,XB,type="l", main = "Brownian Bridge")
+abline(h=0)
+
+BM <- W
+BB <- W - times * W[n]   # The Brownian bridge from (0,0) to (1,target)
+
+par(mfrow=c(1,2))
+plot(times,BM,type="l", main = "Brownian Motion")
+plot(times,BB,type="l", main = "Brownian Bridge")
+abline(h=0)
+
+# Vervaat construction
+#Bmin <- min(B)
+#tmin <- which(B == Bmin)
+#newtimes <- (times[tmin] + times) %% 1
+#J<-floor(newtimes * n)
+#BE <- B[J] - Bmin
+#plot(1:length(BE)/n,BE,type="l")
+```
+
+
+
