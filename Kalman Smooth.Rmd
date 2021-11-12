@@ -1,0 +1,152 @@
+
+
+
+
+```{r}
+rm(list = ls())
+graphics.off()
+
+devtools::install_github("KevinKotze/tsm")
+install.packages("dlm", repos = "https://cran.rstudio.com/", 
+    dependencies = TRUE)
+
+
+library(tsm)
+library(dlm)
+```
+
+
+```{r}
+dat <- sarb_quarter$KBP6006L/sarb_quarter$KBP6006D
+dat.tmp <- diff(log(na.omit(dat)) * 100, lag = 1)
+head(dat)
+inf <- ts(dat.tmp, start = c(1960, 2), frequency = 4)
+plot.ts(inf)
+```
+
+```{r}
+set.seed(1234)
+paths<-1
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.15
+diffusion <- sqrt(0.5)
+X<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X[,i]=0 + drift*times + diffusion*cumsum(dW)
+}
+matplot(X,main="Brownian Bridge",xlab="Time",ylab="Path",type="l")
+```
+
+
+```{r}
+lambda <- rep(0, length(X))
+lambda[79:80] <- 1
+lambda <- ts(lambda, start = c(0, 5000), frequency = 4)
+plot(lambda)
+```
+
+```{r}
+fn <- function(parm) {
+    mod <- dlmModPoly(order = 1) + dlmModReg(lambda, addInt = FALSE)
+    V(mod) <- exp(parm[1])
+    diag(W(mod))[1] <- exp(parm[2])
+    return(mod)
+}
+
+fit <- dlmMLE(X, rep(0, 2), build = fn, hessian = TRUE)
+conv <- fit$convergence  # zero for converged
+
+loglik <- dlmLL(X, dlmModPoly(1) + dlmModReg(lambda, addInt = FALSE))
+n.coef <- 2
+r.aic <- (2 * (loglik)) + 2 * (sum(n.coef))  #dlmLL caculates the neg. LL
+r.bic <- (2 * (loglik)) + (log(length(X))) * (n.coef)
+
+mod <- fn(fit$par)
+obs.error.var <- V(mod)
+state.error.var <- W(mod)
+
+filtered <- dlmFilter(X, mod = mod)
+smoothed <- dlmSmooth(filtered)
+resids <- residuals(filtered, sd = FALSE)
+mu <- dropFirst(smoothed$s[, 1])
+mu.1 <- mu[1]
+mu.end <- mu[length(mu)]
+```
+
+
+```{r}
+par(mfrow = c(2, 1), mar = c(2.2, 2.2, 1, 1), cex = 0.8)
+plot.ts(X, col = "darkgrey", xlab = "", ylab = "", lwd = 2)
+lines(mu, col = "black")
+legend("topright", legend = c("Observed Deflator", "Stochastic level"), 
+    lwd = c(2, 1), col = c("darkgrey", "black"), bty = "n")
+
+plot.ts(resids, ylab = "", xlab = "", col = "darkgrey", 
+    lwd = 2)
+abline(h = 0)
+legend("topright", legend = "Residuals", lwd = 2, col = "darkgrey", 
+    bty = "n")
+```
+
+
+```{r}
+fn <- function(parm) {
+    dlmModPoly(order = 1, dV = exp(parm[1]), dW = exp(parm[2]))
+}
+
+fit <- dlmMLE(X, rep(0, 2), build = fn, hessian = TRUE)
+conv <- fit$convergence  # zero for converged
+
+loglik <- dlmLL(inf, dlmModPoly(1))
+n.coef <- 2
+r.aic <- (2 * (loglik)) + 2 * (sum(n.coef))  #dlmLL caculates the neg. LL
+r.bic <- (2 * (loglik)) + (log(length(inf))) * (n.coef)
+
+mod <- fn(fit$par)
+obs.error.var <- V(mod)
+state.error.var <- W(mod)
+
+filtered <- dlmFilter(X, mod = mod)
+smoothed <- dlmSmooth(filtered)
+resids <- residuals(filtered, sd = FALSE)
+mu <- dropFirst(smoothed$s)
+
+conf.tmp <- unlist(dlmSvd2var(smoothed$U.S, smoothed$D.S))
+conf <- ts(conf.tmp[-1], start = c(5000, 2), frequency = 4)
+wid <- qnorm(0.05, lower = FALSE) * sqrt(conf)
+
+conf.pos <- mu + wid
+conf.neg <- mu - wid
+
+comb.state <- cbind(mu, conf.pos, conf.neg)
+```
+
+```{r}
+forecast <- dlmForecast(filtered, nAhead = 1000)
+var.2 <- unlist(forecast$Q)
+wid.2 <- qnorm(0.05, lower = FALSE) * sqrt(var.2)
+comb.fore <- cbind(forecast$f, forecast$f + wid.2, forecast$f - 
+    wid.2)
+
+result <- ts(rbind(comb.state, comb.fore), start = c(0, 
+    4), frequency = 4)
+```
+
+```{r}
+par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 1), cex = 0.8)
+plot.ts(result, col = c("black", "red", "red"), plot.type = "single", 
+    xlab = "", ylab = "", lty = c(1, 2, 2),xlim = c(0,6000), ylim = c(-2, 
+        8))
+lines(X, col = "darkgrey", lwd = 1.5)
+abline(v = c(2014, 1), col = "blue", lwd = 1, lty = 3)
+legend("topleft", legend = c("Observed Deflator", "Stochastic level"), 
+    lwd = c(1.5, 1), col = c("darkgrey", "black"), bty = "n")
+```
+
+
+
+

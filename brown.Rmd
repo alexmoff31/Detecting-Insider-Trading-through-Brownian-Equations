@@ -1,0 +1,285 @@
+
+
+```{r}
+library(KFAS)
+library(autostsm)
+library(forecast)
+```
+
+```{r}
+set.seed(1234)
+paths<-1
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.15
+diffusion <- sqrt(0.5)
+df <- data.frame(0, ncol = (n), nrow = (paths))
+X<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X[,i]=0+ drift*times + diffusion*cumsum(dW)
+  model =SSModel(X[,i] ~ SSMregression(~ 0+ dW ), u = 0)
+  model
+  #out <- KFS(fit$y, nsim = 1000)
+ # out
+}
+#y
+matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l")
+#plot(y)
+model
+```
+
+
+```{r}
+updatefn <- function(pars, model, ...) {
+  Q <- diag(exp(pars[1:4]))
+  Q[upper.tri(Q)] <- pars[5:10]
+  model["Q", etas = "level"] <- crossprod(Q)
+  Q <- diag(exp(pars[11:14]))
+  Q[upper.tri(Q)] <- pars[15:20]
+  model["Q", etas = "custom"] <- y["P1", states = "custom"] <-
+  crossprod(Q)
+  model
+}
+```
+
+```{r}
+init <- chol(cov(log(abs(X))))
+
+fitinit <- fitSSM(model, updatefn = updatefn, inits = rep(c(log(diag(init)), init[upper.tri(init)]), 2), method = "BFGS")
+-fitinit$optim.out$val
+```
+
+```{r}
+fit <- fitSSM(model, updatefn = updatefn, inits = fitinit$optim.out$par, method = "BFGS", nsim = 250)
+-fit$optim.out$val
+```
+
+```{r}
+fit$y
+out <- KFS(fit$model, nsim = 1000)
+out
+```
+
+```{r}
+plot(coef(out, states = "regression"), main = "Smoothed states", yax.flip = TRUE, ylim = c(-1000,1000))
+```
+```{r}
+res <- rstandard(KFS(fit$model, filtering = "mean", smoothing = "none", nsim = 1000))
+acf(res, na.action = na.pass)
+```
+
+
+```{r}
+#X[,i]
+matrix()
+```
+```{r}
+fit$model
+```
+```{r}
+#ts(matrix(NA, nrow=1000,ncol=paths), start = 5001)
+```
+
+```{r}
+fit$model
+print("___")
+model
+```
+
+
+```{r}
+coef(
+  y,
+  start = NULL,
+  end = NULL,
+  filtered = FALSE,
+  states = "all",
+  last = TRUE,
+)
+
+out <- KFS(model)
+#coef(out)
+coef(out, start = c(4950, 12), end = c(5000, 2))
+```
+
+```{r}
+ts(matrix(NA, nrow=n,ncol=paths),start = 5001)
+```
+
+```{r}
+plds <- predict(model, newdata = SSModel(X ~ SSMregression(~ 0+ dW ), u = 0),u = 1, distribution = "gaussian", interval = "prediction", nsim = 1000)
+plot(plds)
+trend <- exp(signal(out, states = "all")$signal)
+par(mfrow = c(2, 2), mar = c(2, 2, 2, 2) + 0.1, oma = c(2, 2, 0, 0))
+ts.plot(X, trend, plds, col = c(1, 2, rep(3, 3)), xlab = NULL, ylab = NULL, main = colnames(X))
+```
+
+```{r}
+pldsa <- predict(fit$model, newdata = SSModel(ts(matrix(NA, 6, 4), start = 5001) ~ SSMregression(X ~ 0+ dW),u = 1, distribution = "gaussian"), interval = "prediction", nsim = 1000)
+plot(pldsa)
+trend <- exp(signal(out, states = "all")$signal)
+par(mfrow = c(2, 2), mar = c(2, 2, 2, 2) + 0.1, oma = c(2, 2, 0, 0))
+ts.plot(X, trend, pldsa, col = c(1, 2, rep(3, 3)), xlab = NULL, ylab = NULL, main = colnames(X))
+```
+
+
+```{r}
+predss <- predict(fit$model, newdata = SSModel(ts(X[,i], start=5001) ~ SSMregression(~ 0+ dW ), u = 1, distribution = "gaussian"), interval = "confidence", nsim = 1000)
+plot(predss)
+trend <- exp(signal(out, states = "all")$signal)
+par(mfrow = c(2, 2), mar = c(2, 2, 2, 2) + 0.1, oma = c(2, 2, 0, 0))
+ts.plot(X, trend, predss, col = c(1, 2, rep(3, 3)), xlab = NULL, ylab = NULL, main = colnames(X))
+for (i in 1:4) {
+ts.plot(X[, i] / X[,i], trend[, i], predss[[i]], col = c(1, 2, rep(3, 3)), xlab = NULL, ylab = NULL, main = colnames(X)[i])
+}
+```
+
+```{r}
+pred <- predict(fit$model, newdata = SSModel(ts(matrix(NA, nrow=n,ncol=paths), start = 5001) ~ X[,i] ~ SSMregression(~ 0+ W ), u = 1, distribution = "gaussian"), interval = "confidence", nsim = 1000)
+trend <- exp(signal(out, "trend")$signal)
+par(mfrow = c(2, 2), mar = c(2, 2, 2, 2) + 0.1, oma = c(2, 2, 0, 0))
+#for (i in 1:4) {
+#ts.plot(alcohol[, i] / alcohol[, 4 + i], trend[, i], pred[[i]], col = c(1, 2, rep(3, 3)), xlab = NULL, ylab = NULL, main = colnames(alcohol)[i])
+#}
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+pred <- predict(fit$model,
++ newdata = SSModel(ts(matrix(NA, 6, 4), start = 2008) ~ -1 +
++ SSMcustom(Z = fit$model$Z, T = fit$model$T, R = fit$model$R,
++ Q = fit$model$Q), u = 1, distribution = "poisson"),
++ interval = "confidence", nsim = 10000)
+R> trend <- exp(signal(out, "trend")$signal)
+R> par(mfrow = c(2, 2), mar = c(2, 2, 2, 2) + 0.1, oma = c(2, 2, 0, 0))
+R> for (i in 1:4) {
++ ts.plot(alcohol[, i] / alcohol[, 4 + i], trend[, i], pred[[i]],
++ col = c(1, 2, rep(3, 3)), xlab = NULL, ylab = NULL,
++ main = colnames(alcohol)[i])
++ }
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(car)
+library(MASS)
+library(lmtest)
+library(tseries)
+library(ggfortify)
+set.seed(1234)
+paths<-5
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.15
+diffusion <- sqrt(0.5)
+df <- data.frame(0, ncol = (n), nrow = (paths))
+X<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X[,i]=0+ drift*times + diffusion*cumsum(dW)
+}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+set.seed(20174558)
+KalBrownianBridge<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
+{
+  paths<-5
+  n <- 5000
+  times <- seq(0, 1, length.out=n)
+  drift <- 0.5
+  diffusion <- 0.2
+  XB<-matrix(0,nrow=(n),ncol=paths)
+	maximum <- matrix(0, nrow=1, ncol = paths)
+  for(i in 1:paths)
+    {
+    dW <- rnorm(n)/sqrt(n)
+    W <- cumsum(dW)
+    X <- drift*times + diffusion*cumsum(dW)
+    XB[,i] <- X - (times) * X[n] # X - (times/5000) * X[n]*(times/5000)/(1-times/5000) goes back to brownian motion
+#    dX[,i] <- drift*times + diffusion*cumsum(dW)
+    maximum[1,i]<-max(XB[,i])
+    
+    fit_tsB <- StructTS(XB[,i],type = "level")
+  	print(fit_tsB)
+    par(mfrow = c(2,1))
+  	plot(XB[,i], type = "o", col = "grey")
+  	lines(fitted(fit_tsB), lty = "dashed", lwd = 1)
+	  
+  	lines(tsSmooth(fit_tsB), lty = "dashed", lwd = 1, col = "blue")
+  	
+  	trend_tsB <- StructTS(XB[,i],type = "trend")	
+  	plot(forecast(trend_tsB, level =c(50,90), h = 1000), xlim = c(0,6000))
+
+  	#plot(trend_tsB, x=c(0,5000))
+  	
+  }
+#	par(mfrow=c(1,2))
+	matplot(XB,main="Brownian Bridge",xlab="Time",ylab="Path",type="l")
+}
+
+
+KalBrownianBridge()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

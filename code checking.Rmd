@@ -1,0 +1,182 @@
+
+
+```{r}
+library(car)
+library(MASS)
+library(lmtest)
+library(tseries)
+library(ggfortify)
+set.seed(1234)
+paths<-5
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.35
+diffusion <- 0.5
+df <- data.frame(0, ncol = (n), nrow = (paths))
+X<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X[,i]=0+ drift*times + diffusion*cumsum(dW)
+  
+}
+
+
+
+x1=cumsum(rnorm(n,0,1))
+x2=times
+matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l")
+for(k in 1:paths)
+{
+m2=lm(X[,k]~x1+x2)
+summary(m2)
+autoplot(m2)
+par(mfrow = c(2,1))
+plot(X[,k])
+hist(diff(X[,k]), xlim = c(-0.06,0.06))
+print(summary(m2))
+print(autoplot(m2))
+}
+```
+
+
+```{r}
+set.seed(1234)
+paths<-10
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.15
+diffusion <- sqrt(0.5)
+XB<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X=0+ drift*times + diffusion*cumsum(dW)
+  XB[,i] <- X - (times) * X[n]
+}
+
+xb1=cumsum(rnorm(n,0,1))
+xb2=times
+
+matplot(XB,main="Brownian Bridge",xlab="Time",ylab="Path",type="l")
+for(k in 1:paths)
+{
+mb2=lm(XB[,k]~xb1+xb2)
+summary(mb2)
+autoplot(mb2)
+par(mfrow = c(2,1))
+plot(XB[,k])
+hist(diff(XB[,k]), xlim = c(-0.06,0.06))
+print(summary(mb2))
+print(autoplot(mb2))
+}
+```
+
+```{r}
+summary(mb2)
+Test <- summary(mb2)
+Test$coefficients[1]
+Test$coefficients[2]
+Test$coefficients[3]
+```
+
+```{r}
+set.seed(1234)
+paths<-500
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.15
+diffusion <- sqrt(0.5)
+XB<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X=0+ drift*times + diffusion*cumsum(dW)
+  XB[,i] <- X - (times) * X[n]
+}
+
+xb1=cumsum(rnorm(n,0,1))
+xb2=times
+XBTest<-matrix(0, nrow=(3),ncol=paths)
+for(k in 1:paths)
+{
+mb2=lm(XB[,k]~xb1+xb2)
+Test <- summary(mb2)
+XBTest[1,k] <- Test$coefficients[1]
+XBTest[2,k] <- Test$coefficients[2]
+XBTest[3,k] <- Test$coefficients[3]
+}
+#XBTest
+mean(XBTest[1,])
+mean(XBTest[2,])
+mean(XBTest[3,])
+```
+
+```{r}
+set.seed(1234567)
+paths<-10000
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0.35
+diffusion <- 0.5
+X<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)/sqrt(n)
+  W <- cumsum(dW)
+  X[,i]= drift*times + diffusion*cumsum(dW)
+}
+
+x1=cumsum(rnorm(n,0,1))
+x2=times
+XTest<-matrix(0, nrow=(3),ncol=paths)
+for(k in 1:paths)
+{
+mb=lm(X[,k]~x1+x2)
+Test <- summary(mb)
+XTest[1,k] <- Test$coefficients[1]
+XTest[2,k] <- Test$coefficients[2]
+XTest[3,k] <- Test$coefficients[3]
+}
+#XTest
+mean(XTest[1,])
+mean(XTest[2,])
+mean(XTest[3,])
+```
+
+```{r}
+set.seed(12356)
+paths<-500
+n <- 5001
+times <- seq(0, 1, length.out=n)
+drift <- 0
+diffusion <- 1
+X<-matrix(0, nrow=(n),ncol=paths)
+for(i in 1:paths)
+{
+  dW <- rnorm(n, mean = 0, sd = 1)
+  W <- cumsum(dW)
+  X[,i]= drift*times + diffusion*cumsum(dW)
+}
+
+x1=cumsum(rnorm(n,0,1))
+x2=times
+XTest<-matrix(0, nrow=(3),ncol=paths)
+for(k in 1:paths)
+{
+mb=lm(X[,k]~x1+x2)
+Test <- summary(mb)
+XTest[1,k] <- Test$coefficients[1]
+XTest[2,k] <- Test$coefficients[2]
+XTest[3,k] <- Test$coefficients[3]
+}
+#XTest
+mean(XTest[1,])
+mean(XTest[2,])
+mean(XTest[3,])
+```
+
+

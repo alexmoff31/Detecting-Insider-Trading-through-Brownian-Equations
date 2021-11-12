@@ -30,20 +30,9 @@ StandardBrownian<-function() # Standard Browninan with drift 0 and diffusion 1
     dW <- rnorm(n)/sqrt(n)
     W <- cumsum(dW)
     X[,i] <- drift*times + diffusion*cumsum(dW)
-    maximum[1,i]<-max(X[,i])
-    minimum[1,i]<-min(X[,i])
   }
-#	par(mfrow = c(1,2))
 	matplot(X,main="Standard Brownian",xlab="Time",ylab="Path",type="l",
-	        #col=brewer.pal(n = paths, name = "Spectral"),
 	         x = seq(0, 1, length.out = 5000))
-	abline(h=mean(maximum), col = "black",)
-#	matplot(X,main="Standard Brownian",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
-#	abline(v=4000)
-#	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
-#	abline(h=minimum,col=brewer.pal(n = paths, name = "Spectral"))
-#	print(maximum)
-#	print(mean(maximum))
   }
 
 
@@ -53,12 +42,12 @@ StandardBrownian()
 
 ```{r}
 #set.seed(20174558)
-Brownian<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
+Brownian<-function() # Standard Browninan with drift 0.35 and diffusion 0.5
 {
   paths<-30
   n <- 5000
   times <- seq(0, 1, length.out=n)
-  drift <- 0.15
+  drift <- 0.35
   diffusion <- 0.5
   X<-matrix(0,nrow=(n),ncol=paths)
 	maximum <- matrix(0, nrow=1, ncol = paths)
@@ -71,21 +60,10 @@ Brownian<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
     maximum[1,i]<-max(X[,i])
     means[1,i] <- mean(X[n,i])
   }
-# par(mfrow=c(1,2))
 	matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l",
-	        #col=brewer.pal(n = paths, name = "Spectral"),
 	         x = seq(0, 1, length.out = 5000))
-#	abline(h=mean(maximum), col = "black",)
-#	matplot(X,main="Brownian Motion",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
-#	abline(v=4000)
-#	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
-#	print(maximum)
-#	print(mean(maximum))
-#	print(mean(drift*times))
-#	print("Mean of end values: ", mean(means))
-#	print(mean(means))
+  legend("topleft", legend=c(paste0("Drift = ", drift), paste0("Diffusion = ", diffusion)), cex=0.8)
   }
-
 
 Brownian()
 
@@ -95,7 +73,7 @@ Brownian()
 set.seed(20174558)
 BrownianBridge<-function() # Standard Browninan with drift 0.25 and diffusion 0.5
 {
-  paths<-10
+  paths<-30
   n <- 5000
   times <- seq(0, 1, length.out=n)
   drift <- 0.5
@@ -107,21 +85,12 @@ BrownianBridge<-function() # Standard Browninan with drift 0.25 and diffusion 0.
     dW <- rnorm(n)/sqrt(n)
     W <- cumsum(dW)
     X <- drift*times + diffusion*cumsum(dW)
-    XB[,i] <- X - (times) * X[n] # X - (times/5000) * X[n]*(times/5000)/(1-times/5000) goes back to brownian motion
-#    dX[,i] <- drift*times + diffusion*cumsum(dW)
+    XB[,i] <- X - (times) * X[n] 
     maximum[1,i]<-max(XB[,i])
   }
-#	par(mfrow=c(1,2))
 	matplot(XB,main="Brownian Bridge",xlab="Time",ylab="Path",type="l",
-	#        col=brewer.pal(n = paths, name = "Spectral"), 
 	        x = seq(0, 1, length.out = 5000))
-#	abline(h=mean(maximum), col = "black",)
-#	matplot(XB,main="Brownian Bridge",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
-#	legend("bottomleft",legend=cat("drift = ", drift),cat("diffusion = ", diffusion)) 
-#	abline(v=4000)
-#	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
-#	print(maximum)
-#	print(mean(maximum))
+  legend("topleft", legend=c(paste0("Drift = ", drift), paste0("Diffusion = ", diffusion)), cex=0.8)
   }
 
 
@@ -147,20 +116,9 @@ GeometricBrownian<-function() # Standard Browninan with drift 0.25 and diffusion
     W <- cumsum(dW)
     mu <- drift - 0.5* diffusion^2
     X[,i] <- exp((drift - 0.5*(diffusion)^2)*times + diffusion*cumsum(dW))
-    maximum[1,i]<-max(X[,i])
-  #  print(mean(X))
- #   print(mean(exp(0.7*times)))
+
   }
-#	par(mfrow=c(1,2))
 	matplot(X,main="Geometric Brownian Motion",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
-	abline(h=mean(maximum), col = "black",)
-	matplot(X,main="Geometric Brownian Motion",xlab="Time",ylab="Path",type="l",col=brewer.pal(n = paths, name = "Spectral"))
-	abline(v=4000)
-	abline(h=maximum,col=brewer.pal(n = paths, name = "Spectral"))
-#	print(maximum)
-#	print(mean(maximum))
-#	print(mean(X))
-#	print(mean(exp(drift*times)))
 }
 
 
